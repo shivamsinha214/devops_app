@@ -27,7 +27,7 @@ app.use('/api', limiter);
 // CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-app.azurewebsites.net'] 
+    ? ['https://cts-vibeappea41103-4.azurewebsites.net'] 
     : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true
 }));
@@ -60,7 +60,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Serve React app in production
+// Serve React app in production (catch-all for client-side routing)
 if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
@@ -76,7 +76,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
+// 404 handler - this should be the very last middleware
 app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
@@ -85,16 +85,4 @@ app.listen(PORT, () => {
   console.log(`🚀 DevOps Dashboard Backend running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 API available at: http://localhost:${PORT}/api`);
-}); 
-
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/dist')));
-}
-
-// Serve React app in production
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
-  });
-}
+});
