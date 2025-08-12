@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const fs = require('fs');
 
 // Import route handlers
 const deploymentRoutes = require('./routes/deployments');
@@ -13,6 +14,11 @@ const dashboardRoutes = require('./routes/dashboard');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Log environment info at startup
+console.log('🚀 Starting DevOps Dashboard Backend...');
+console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`🌐 Port: ${PORT}`);
 
 // Security middleware
 app.use(helmet());
@@ -39,9 +45,20 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Logging
 app.use(morgan('combined'));
 
-// Serve static files in production
+// Check if frontend build exists and serve static files in production
+const frontendDistPath = path.join(__dirname, '../frontend/dist');
+console.log(`📁 Looking for frontend build at: ${frontendDistPath}`);
+
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+  if (fs.existsSync(frontendDistPath)) {
+    console.log('✅ Frontend build found, serving static files');
+    app.use(express.static(frontendDistPath));
+  } else {
+    console.warn('⚠️  Frontend build not found! Static files will not be served.');
+    console.warn('   Make sure to run "npm run build" in the frontend directory');
+  }
+} else {
+  console.log('🔧 Development mode - not serving static files');
 }
 
 // API Routes
@@ -52,18 +69,30 @@ app.use('/api/dashboard', dashboardRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+  const buildExists = fs.existsSync(frontendDistPath);
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    frontendBuildExists: buildExists,
+    frontendBuildPath: frontendDistPath
   });
 });
 
 // Serve React app in production (catch-all for client-side routing)
 if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+    const indexPath = path.join(frontendDistPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).json({ 
+        error: 'Frontend build not found',
+        message: 'The frontend application has not been built. Please run "npm run build" in the frontend directory.',
+        buildPath: frontendDistPath
+      });
+    }
   });
 }
 

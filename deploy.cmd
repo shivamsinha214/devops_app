@@ -61,30 +61,59 @@ IF /I "%IN_PLACE_DEPLOYMENT%" NEQ "1" (
 )
 
 :: 2. Install npm packages for backend
+echo Installing backend dependencies...
 IF EXIST "%DEPLOYMENT_TARGET%\backend\package.json" (
   pushd "%DEPLOYMENT_TARGET%\backend"
   call :ExecuteCmd npm install --production
   IF !ERRORLEVEL! NEQ 0 goto error
   popd
+) ELSE (
+  echo Warning: backend\package.json not found
 )
 
 :: 3. Install npm packages for frontend and build
+echo Installing frontend dependencies and building...
 IF EXIST "%DEPLOYMENT_TARGET%\frontend\package.json" (
   pushd "%DEPLOYMENT_TARGET%\frontend"
-  call :ExecuteCmd npm install
+  echo Installing frontend dependencies...
+  call :ExecuteCmd npm install --include=dev
   IF !ERRORLEVEL! NEQ 0 goto error
+  
+  echo Building frontend for production...
   call :ExecuteCmd npm run build
-  IF !ERRORLEVEL! NEQ 0 goto error
+  IF !ERRORLEVEL! NEQ 0 (
+    echo Frontend build failed!
+    goto error
+  )
+  
+  echo Checking if build succeeded...
+  IF EXIST "dist\index.html" (
+    echo Frontend build successful - dist folder created
+  ) ELSE (
+    echo Frontend build failed - dist folder not found
+    goto error
+  )
   popd
+) ELSE (
+  echo Warning: frontend\package.json not found
 )
 
 :: 4. Install root npm packages
+echo Installing root dependencies...
 IF EXIST "%DEPLOYMENT_TARGET%\package.json" (
   pushd "%DEPLOYMENT_TARGET%"
   call :ExecuteCmd npm install --production
   IF !ERRORLEVEL! NEQ 0 goto error
   popd
+) ELSE (
+  echo Warning: root package.json not found
 )
+
+:: 5. Set NODE_ENV to production
+echo Setting NODE_ENV=production
+set NODE_ENV=production
+
+echo Deployment completed successfully!
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 goto end
