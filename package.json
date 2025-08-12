@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Full-stack DevOps Dashboard Application",
   "scripts": {
-    "start": "cd backend && npm start",
+    "start": "cd backend && node server.js",
     "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
     "build": "cd frontend && npm run build",
     "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
