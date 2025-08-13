@@ -18,29 +18,40 @@ jobs:
         with:
           node-version: '18.x'
 
-      # Install backend deps
+      - name: Detect app directory
+        id: detect
+        run: |
+          if [ -f "./backend/server.js" ]; then
+            echo "APP_DIR=." >> $GITHUB_ENV
+          elif [ -f "./devops_app/backend/server.js" ]; then
+            echo "APP_DIR=devops_app" >> $GITHUB_ENV
+          else
+            echo "Could not find backend/server.js in '.' or 'devops_app'"; exit 1
+          fi
+          echo "Using APP_DIR=$APP_DIR"
+
       - name: Install backend dependencies
-        working-directory: devops_app/backend
+        working-directory: ${{ env.APP_DIR }}/backend
         run: npm ci
 
-      # Install frontend deps and build SPA
       - name: Install frontend dependencies
-        working-directory: devops_app/frontend
+        working-directory: ${{ env.APP_DIR }}/frontend
         run: npm ci
 
       - name: Build frontend
-        working-directory: devops_app/frontend
+        working-directory: ${{ env.APP_DIR }}/frontend
         run: npm run build
 
-      # Optional: trim frontend dev deps from artifact
-      - name: Clean frontend node_modules (optional)
-        run: rm -rf devops_app/frontend/node_modules
+      - name: Show built files (debug)
+        run: |
+          ls -la ${{ env.APP_DIR }}/frontend/dist || true
+          ls -la ${{ env.APP_DIR }} || true
 
-      - name: Upload artifact
+      - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: devops_app
+          path: ${{ env.APP_DIR }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -50,14 +61,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
-          path: devops_app
+          path: app
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'CTS-VibeAppea41103-4'
           slot-name: 'Production'
-          package: devops_app
+          package: app
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_282DE9C7901148ACB29A84C95291F800 }}
 
 
