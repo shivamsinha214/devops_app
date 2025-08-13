@@ -91,6 +91,18 @@ app.get('*', (req, res) => {
   }
 });
 
+// Fallback: serve SPA index for any non-API GET requests (ensures root works)
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    const indexPath = path.join(frontendDistPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      console.log(`Serving SPA index for path: ${req.path}`);
+      return res.sendFile(indexPath);
+    }
+  }
+  next();
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
