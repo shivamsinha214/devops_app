@@ -49,16 +49,13 @@ app.use(morgan('combined'));
 const frontendDistPath = path.join(__dirname, '../frontend/dist');
 console.log(`📁 Looking for frontend build at: ${frontendDistPath}`);
 
-if (process.env.NODE_ENV === 'production') {
-  if (fs.existsSync(frontendDistPath)) {
-    console.log('✅ Frontend build found, serving static files');
-    app.use(express.static(frontendDistPath));
-  } else {
-    console.warn('⚠️  Frontend build not found! Static files will not be served.');
-    console.warn('   Make sure to run "npm run build" in the frontend directory');
-  }
+const frontendBuildExists = fs.existsSync(frontendDistPath);
+if (frontendBuildExists) {
+  console.log('✅ Frontend build found, serving static files');
+  app.use(express.static(frontendDistPath));
 } else {
-  console.log('🔧 Development mode - not serving static files');
+  console.warn('⚠️  Frontend build not found! Static files will not be served.');
+  console.warn('   Make sure to run "npm run build" in the frontend directory');
 }
 
 // API Routes
@@ -80,21 +77,19 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Serve React app in production (catch-all for client-side routing)
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    const indexPath = path.join(frontendDistPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      res.status(404).json({ 
-        error: 'Frontend build not found',
-        message: 'The frontend application has not been built. Please run "npm run build" in the frontend directory.',
-        buildPath: frontendDistPath
-      });
-    }
-  });
-}
+// Serve React app (catch-all for client-side routing)
+app.get('*', (req, res) => {
+  const indexPath = path.join(frontendDistPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).json({ 
+      error: 'Frontend build not found',
+      message: 'The frontend application has not been built. Please run "npm run build" in the frontend directory.',
+      buildPath: frontendDistPath
+    });
+  }
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
