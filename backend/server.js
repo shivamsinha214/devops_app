@@ -13,7 +13,7 @@ const simulatorRoutes = require('./routes/simulator');
 const dashboardRoutes = require('./routes/dashboard');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || process.env.WEBSITES_PORT || 8080;
 
 // Log environment info at startup
 console.log('🚀 Starting DevOps Dashboard Backend...');
@@ -110,7 +110,7 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 DevOps Dashboard Backend running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 API available at: http://localhost:${PORT}/api`);

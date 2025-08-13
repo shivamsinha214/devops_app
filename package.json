@@ -16,7 +16,16 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "keywords": ["devops", "dashboard", "azure", "deployment", "monitoring"],
+  "keywords": [
+    "devops",
+    "dashboard",
+    "azure",
+    "deployment",
+    "monitoring"
+  ],
   "author": "DevOps Engineer",
-  "license": "MIT"
-} 
+  "license": "MIT",
+  "dependencies": {
+    "all": "^0.0.0"
+  }
+}
